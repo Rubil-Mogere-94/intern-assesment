@@ -1,0 +1,5 @@
+- name: Configure public VM
+  hosts: public
+  become: yes
+  roles:
+    - nginx
