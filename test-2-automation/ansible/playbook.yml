@@ -1,0 +1,67 @@
+---
+- name: Configure gateway VM
+  hosts: gateway
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Start and enable nginx
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Set hostname
+      hostname:
+        name: gateway
+
+    - name: Create deploy user
+      user:
+        name: deploy
+        state: present
+        groups: sudo
+        append: yes
+        shell: /bin/bash
+
+    - name: Simulate NSG rules with iptables
+      block:
+        - name: Allow SSH from host IP only
+          iptables:
+            chain: INPUT
+            protocol: tcp
+            destination_port: 22
+            source: "{{ ansible_default_ipv4.gateway }}/32"
+            jump: ACCEPT
+            comment: "Allow SSH from host"
+        - name: Allow HTTP/HTTPS from anywhere
+          iptables:
+            chain: INPUT
+            protocol: tcp
+            destination_port: "{{ item }}"
+            jump: ACCEPT
+            comment: "Allow HTTP/HTTPS from anywhere"
+          loop:
+            - 80
+            - 443
+        - name: Allow all traffic from private subnet
+          iptables:
+            chain: INPUT
+            source: "192.168.33.0/24"
+            jump: ACCEPT
+            comment: "Allow from private subnet"
+        - name: Set default policy to DROP for INPUT chain
+          iptables:
+            chain: INPUT
+            policy: DROP
+      when: ansible_os_family == "Debian"
+
+    - name: Save iptables rules
+      shell: iptables-save > /etc/iptables/rules.v4
+      when: ansible_os_family == "Debian"
