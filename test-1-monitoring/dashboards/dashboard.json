@@ -1,0 +1,46 @@
+{
+  "title": "Main Monitoring Dashboard",
+  "panels": [
+    {
+      "title": "Pod CPU Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) by (pod)"
+        }
+      ]
+    },
+    {
+      "title": "Pod Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(container_memory_usage_bytes) by (pod)"
+        }
+      ]
+    },
+    {
+      "title": "Node Health Status",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "up{job=\"kubernetes-nodes\"}"
+        }
+      ]
+    },
+    {
+      "title": "Application Logs",
+      "type": "logs",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "{namespace=~\"$namespace\", pod=~\"$pod\"}"
+        }
+      ]
+    },
+    {
+      "title": "Active Alerts",
+      "type": "alertlist"
+    }
+  ]
+}

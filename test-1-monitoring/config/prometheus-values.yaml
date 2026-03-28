@@ -1,23 +1,13 @@
-# Custom values for kube-prometheus-stack
+# Overrides for kube-prometheus-stack
 grafana:
-  service:
-    type: ClusterIP
-  sidecar:
-    dashboards:
-      enabled: true
-      label: grafana_dashboard
-      searchNamespace: ALL
+  enabled: false  # We already have Grafana from Loki stack
+alertmanager:
+  enabled: true
 prometheus:
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
-    alertmanagerSpec:
-      config:
-        global:
-          resolve_timeout: 5m
-        route:
-          group_by: ['alertname']
-          receiver: 'dummy'
-        receivers:
-        - name: 'dummy'
-          webhook_configs:
-          - url: 'http://dummy-webhook:8080'   # replace in production
+    retention: 30d
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m

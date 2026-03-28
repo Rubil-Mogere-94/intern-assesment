@@ -1,9 +1,8 @@
-# Loki values
+# Minimal Loki config – for production, use persistent storage and replication
 loki:
   persistence:
-    enabled: true
-    size: 10Gi
-config:
-  table_manager:
-    retention_deletes_enabled: true
-    retention_period: 168h   # 7 days
+    enabled: false
+  config:
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h

@@ -1,90 +1,82 @@
 # Test 1 – Monitoring Stack
 
-## Tool Selection & Justification
+## Tool Selection
 
-### Logging tools: Loki + Promtail + Grafana
+**Logging**: Promtail + Loki + Grafana  
+**Metrics**: Prometheus + Grafana  
 
-- **Loki** – lightweight, cost‑effective, integrates natively with Grafana, stores logs in a way that matches Prometheus labels, perfect for Kubernetes.
-- **Promtail** – DaemonSet that scrapes container logs and pushes them to Loki; easy to configure and low resource overhead.
-- **Why not ELK?** ELK (Elasticsearch, Logstash, Kibana) is more powerful but heavier to run and maintain. Loki/Promtail align better with the “Kubernetes native” philosophy and are simpler for a small team.
+### Why these tools?
 
-### Metrics tools: Prometheus + Grafana
+- **Loki** is lightweight, cost-effective, and tightly integrated with Grafana. It uses labels from Kubernetes, making it easy to correlate logs with metrics.
+- **Promtail** is a simple agent that runs as a DaemonSet and ships logs to Loki with minimal overhead.
+- **Prometheus** is the industry standard for Kubernetes metrics, with a powerful query language (PromQL) and a rich ecosystem.
+- **Grafana** provides a single pane of glass for both logs and metrics, simplifying observability.
 
-- **Prometheus** – de facto standard for Kubernetes metrics, excellent service discovery, powerful query language (PromQL).
-- **Grafana** – unified dashboard for both metrics and logs, rich ecosystem of pre‑built dashboards, easy to share.
-- **Azure Monitor** could be used, but it’s less flexible and vendor‑locked. Prometheus/Grafana give us portability and are widely adopted.
+### Alternative Considered
 
-## Environment Used
+I also considered the EFK stack (Elasticsearch, Fluentd, Kibana). While it offers more powerful full-text search, it requires more resources and operational complexity. For a small team starting out, Loki is simpler to maintain.
 
-I deployed the stack on a **local kind (Kubernetes in Docker)** cluster to keep it self‑contained and cost‑free.  
-The same manifests would work on AKS with minimal changes (e.g., use Azure storage for Loki persistence).
+## Setup Environment
 
-## Setup Steps
+I used a local Kubernetes cluster created with **kind** (Kubernetes in Docker). This simulates an AKS environment without requiring Azure credits. The stack is deployed using **Helm** charts for reproducibility.
 
-### 1. Create a kind cluster
-```bash
-kind create cluster --name monitoring-demo
-```
+## Deployment Steps
 
-### 2. Install the monitoring stack using Helm
+1. Install kind and kubectl.
+2. Create a cluster: `kind create cluster --name monitoring-demo`
+3. Install Helm: `curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash`
+4. Add repositories:
+   ```bash
+   helm repo add grafana https://grafana.github.io/helm-charts
+   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+   helm repo update
+   ```
+5. Deploy Loki stack (includes Promtail and Grafana):
+   ```bash
+   helm install loki grafana/loki-stack \
+     --set grafana.enabled=true \
+     --set promtail.enabled=true \
+     --set loki.persistence.enabled=false
+   ```
+   (For production, enable persistence.)
+6. Deploy Prometheus:
+   ```bash
+   helm install prometheus prometheus-community/kube-prometheus-stack \
+     --set grafana.enabled=false \
+     --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+   ```
+   (Disable the bundled Grafana since we already have one.)
+7. Expose Grafana service:
+   ```bash
+   kubectl port-forward service/loki-grafana 3000:80
+   ```
+   Access Grafana at http://localhost:3000 (admin/prom-operator by default – change password in production).
+8. Add Prometheus as a data source in Grafana: URL `http://prometheus-kube-prometheus-prometheus:9090`.
+9. Loki is already added automatically by the Loki stack chart.
 
-```bash
-# Add repos
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo add grafana https://grafana.github.io/helm-charts
-helm repo update
+## Verification
 
-# Install Prometheus (with Grafana as part of kube-prometheus-stack)
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace \
-  -f config/prometheus-values.yaml
+**Logs**  
+![Container logs in Grafana](./screenshots/logs.png)
 
-# Install Loki
-helm install loki grafana/loki-stack \
-  --namespace monitoring \
-  -f config/loki-values.yaml \
-  --set promtail.enabled=false   # we install Promtail separately
+**Metrics**  
+![Cluster CPU usage](./screenshots/cpu-usage.png)
 
-# Install Promtail as a DaemonSet
-helm install promtail grafana/promtail \
-  --namespace monitoring \
-  -f config/promtail-values.yaml
-```
+## Dashboards
 
-### 3. Port‑forward Grafana and access it
-```bash
-kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
-```
-Open http://localhost:3000 (default credentials: admin/prom-operator).
+I created a custom dashboard combining key metrics and logs. The exported JSON is in `dashboards/dashboard.json`. It includes:
+- Pod CPU and memory usage
+- Node metrics
+- A log panel filtered by namespace and pod
+- Alerts for high CPU or pods in CrashLoopBackOff
 
-### 4. Verify logs in Grafana
-- Add Loki as a data source (URL: `http://loki:3100`).
-- Go to Explore, select Loki, and see container logs.
+## Alerts
 
-### 5. Verify metrics
-- Prometheus is already a data source.
-- Go to the “Kubernetes / Compute Resources / Cluster” dashboard to see CPU, memory, pod count.
+Alert rules are defined in `alerts/alert-rules.yaml`. They are configured in Prometheus via the `kube-prometheus-stack` values. The alerts include:
+- **High CPU usage** (pod > 80% for 5 minutes)
+- **Pod restarts** (> 5 restarts in 10 minutes)
+- **Missing application logs** (no logs for 10 minutes)
 
-## Dashboards & Alerts
+## Why This Stack is Suitable for AKS
 
-### Metrics Dashboard
-I created a custom dashboard (`dashboards/kubernetes-metrics-dashboard.json`) that focuses on:
-
-- **Cluster overview** – CPU / memory usage, pod count, node health.
-- **Pod details** – per‑pod CPU/memory, restarts, status.
-- **Network** – ingress/egress traffic per pod.
-
-### Logs Dashboard
-A simple dashboard (`dashboards/logs-dashboard.json`) that:
-- Shows the top log producers.
-- Provides a log viewer with label filters (namespace, pod, container).
-- Includes a “last 15 minutes” log stream for quick debugging.
-
-### Alerts
-I defined the following alerts (`alerts/prometheus-alerts.yaml`):
-- **HighPodRestarts**: alerts if a pod restarts more than 3 times in 10 minutes.
-- **HighCPUUsage**: CPU > 80% for 5 minutes.
-- **LowDiskSpace**: node disk usage > 85%.
-
-Alertmanager configuration (`alerts/alertmanager-config.yaml`) routes alerts to a dummy webhook (in production this would be Slack, PagerDuty, etc.).
+The same Helm charts work on AKS with minor adjustments (e.g., using Azure managed disks for persistence). The tooling is cloud-agnostic, so the team can later move to another cloud without rewriting monitoring.

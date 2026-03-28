@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: kubernetes-apps
+    rules:
+    - alert: HighPodCPU
+      expr: sum(rate(container_cpu_usage_seconds_total{container!="", pod!=""}[5m])) by (pod, namespace) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High CPU usage in pod {{ $labels.pod }}"
+    - alert: PodCrashLooping
+      expr: increase(kube_pod_container_status_restarts_total[10m]) > 5
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod {{ $labels.pod }} is crash-looping"
