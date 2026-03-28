@@ -1,0 +1,21 @@
+# Vagrant
+.vagrant/
+
+# Ansible
+*.retry
+ansible.log
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
