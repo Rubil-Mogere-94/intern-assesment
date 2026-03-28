@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
   # Public VM (gateway)
   config.vm.define "public" do |public|
     public.vm.hostname = "gateway"
-    public.vm.network "private_network", ip: "192.168.33.10"
+    public.vm.network "private_network", ip: "192.168.56.10"
     public.vm.network "forwarded_port", guest: 80, host: 8080   # Access nginx from host
     
     # Note: Public network bridge might need adjustment based on host interface
@@ -30,7 +30,7 @@ Vagrant.configure("2") do |config|
   # Private VM (app server)
   config.vm.define "private" do |private|
     private.vm.hostname = "appserver"
-    private.vm.network "private_network", ip: "192.168.33.11"
+    private.vm.network "private_network", ip: "192.168.56.11"
 
     private.vm.provider "virtualbox" do |vb|
       vb.memory = "1024"
