@@ -1,11 +1,19 @@
 # Test 2 – Infrastructure Automation
 
-## Tool Choice
+## Tool Choice & Justification
 
-I used **Vagrant** to provision two Ubuntu 22.04 virtual machines locally (VirtualBox provider), and **Ansible** to configure the public‑facing VM.
+For this assessment, I chose **Vagrant** as the primary Infrastructure as Code (IaC) tool and **Ansible** for configuration management.
 
-- **Vagrant** is used as Infrastructure as Code for VMs on a local machine, simulating the provisioning of cloud resources. It is lightweight and perfect for demonstrating IaC principles without requiring a cloud subscription.
-- **Ansible** handles configuration management, ensuring the gateway VM is correctly set up with required services and security rules.
+- **Vagrant (IaC)**: Used to provision two Ubuntu 22.04 virtual machines locally (VirtualBox provider). 
+  - **Reasoning**: While Terraform is standard for cloud-native resources, I opted for Vagrant to ensure the entire solution remains **fully executable and testable in a local environment** without requiring an Azure subscription (which often necessitates a credit card for setup). This demonstrates the core principles of IaC—reproducibility and automation—using local-first tooling.
+- **Ansible (Configuration)**: Handles all post-provisioning tasks on the gateway VM, including network security hardening and service installation.
+
+## Secret Handling
+
+In this local-first environment (Vagrant), SSH keys are automatically generated and managed by the Vagrant provider, so no manual secret injection was required. However, for production/cloud-native scenarios, my approach to secrets is:
+1.  **Ansible Vault**: To encrypt sensitive variables (like database passwords or API tokens) within the repository.
+2.  **Terraform Sensitive Variables**: Marking variables as `sensitive = true` to prevent them from appearing in plan outputs.
+3.  **Managed Secrets**: In a real Azure environment, I would leverage **Azure Key Vault** to store and retrieve credentials dynamically at runtime.
 
 ## Infrastructure
 
