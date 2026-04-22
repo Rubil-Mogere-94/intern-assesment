@@ -6,7 +6,7 @@ This repository contains my solutions for the SRE role  Technical.
 
 - `test-1-monitoring/`: Monitoring stack setup using Prometheus, Loki, Promtail, and Grafana on a local Kubernetes cluster.
 - `test-2-automation/`: Infrastructure as Code using Vagrant and Ansible to provision and configure a local gateway and application server environment
-- `test-3-troubleshooting/`: Written answers to the Kubernetes connectivity troubleshooting scenario.
+- `test-3-troubleshooting/`: Written answers to the Kubernetes connectivity troubleshooting scenario
 
 ## Highlights
 
