@@ -1,6 +1,6 @@
 # SRE / DevOps Intern Assessment
 
-This repository contains my solutions for the SRE role Intern Technical.
+This repository contains my solutions for the SRE role  Technical.
 
 ## Repository Structure
 
