@@ -12,7 +12,7 @@ This repository contains my solutions for the SRE role  Technical.
 
 - **Local-First Implementation**: All tests are fully executable on a local machine using standard open-source tools (Kubernetes/Kind, Vagrant, Ansible).
 - **IaC Principles**: Used declarative configuration for both infrastructure (Vagrant) and application setup (Ansible/Helm).
-- **Security-Minded**: Simulated real-world cloud security groups using local firewall rules (iptables).
+- **Security-Minded**: Simulated real-world cloud security groups using local firewall rules (iptables)
 
 ## How to Navigate
 
