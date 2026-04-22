@@ -16,4 +16,4 @@ This repository contains my solutions for the SRE role  Technical.
 
 ## How to Navigate
 
-Each directory contains its own `README.md` with detailed instructions on how to run the setup and the rationale behind tool selections
+Each directory contains its own `README.md` with detailed instructions on how to run the setup and the rationale behind tool selections.
